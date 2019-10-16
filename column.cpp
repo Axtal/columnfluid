@@ -30,9 +30,7 @@ struct UserData
 
     double          Kn; 
     double          Gn;
-    double          rc;
     Vec3_t           g;
-    Array<double>   Ft;
     Array<double>   Fb;
     std::ofstream      oss_ss;       ///< file for stress strain data
 };
@@ -60,6 +58,7 @@ void Setup (LBM::Domain & dom, void * UD)
 
 void Report(LBM::Domain & dom, void * UD)
 {
+    //std::cout << dom.Disks[0]->X << dom.Disks[1]->X << std::endl;        
 }
 
 int main(int argc, char **argv) try
@@ -86,8 +85,8 @@ int main(int argc, char **argv) try
     //Dom.Sc       = 0.0;
     dat.g        = 0.0,-9.8,0.0;
     dat.Kn       = Kn;
-    dat.Gn       = -0.5;
-    double me    = M_PI*rho*dat.rc*dat.rc;
+    dat.Gn       = -0.2;
+    double me    = M_PI*rho*rc*rc;
     dat.Gn = 2.0*sqrt((pow(log(-dat.Gn),2.0)*(Kn/me))/(M_PI*M_PI+pow(log(-dat.Gn),2.0)))*me;
 
 
@@ -97,8 +96,10 @@ int main(int argc, char **argv) try
         Dom.Lat[0].GetCell(iVec3_t(i,ny-1,0))->IsSolid = true;
     }
 
-    Dom.AddDisk(-1,Vec3_t(0.5*nx*dx-2.0*rc,0.8*ny*dx,0.0),OrthoSys::O,OrthoSys::O,rho,rc,dt);
-    Dom.AddDisk(-1,Vec3_t(0.5*nx*dx+2.0*rc,0.8*ny*dx,0.0),OrthoSys::O,OrthoSys::O,rho,rc,dt);
+    Dom.AddDisk(-1,Vec3_t(0.5*nx*dx-2.0*rc,0.2*ny*dx,0.0),OrthoSys::O,OrthoSys::O,rho,rc,dt);
+    Dom.AddDisk(-1,Vec3_t(0.5*nx*dx+2.0*rc,0.2*ny*dx,0.0),OrthoSys::O,OrthoSys::O,rho,rc,dt);
+    //Dom.AddDisk(-1,Vec3_t(0.5*nx*dx-2.0*rc,rc,0.0),OrthoSys::O,OrthoSys::O,rho,rc,dt);
+    //Dom.AddDisk(-1,Vec3_t(0.5*nx*dx+2.0*rc,rc,0.0),OrthoSys::O,OrthoSys::O,rho,rc,dt);
 
     for (size_t i=0;i<Dom.Disks.Size();i++)
     {
@@ -109,7 +110,6 @@ int main(int argc, char **argv) try
     }
 
     dat.Fb.Resize(Dom.Disks.Size());
-    dat.Ft.Resize(Dom.Disks.Size());
     
 
     for (size_t i=0;i<Dom.Lat[0].Ncells;i++)
@@ -117,10 +117,8 @@ int main(int argc, char **argv) try
         Dom.Lat[0].Cells[i]->Initialize(rhof, OrthoSys::O);
     }
 
-    std::cout << Kn << std::endl;
-
     //Solving
-    Dom.Solve(Tf,0.01*Tf,Setup,NULL,"column",true,Nproc);
+    Dom.Solve(Tf,0.01*Tf,Setup,Report,"column",true,Nproc);
     dat.oss_ss.close();
  
 }
